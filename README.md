@@ -1,0 +1,1 @@
+# panda-minicurso-sql-2026
