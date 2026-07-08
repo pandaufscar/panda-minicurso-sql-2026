@@ -2,6 +2,9 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
+# ─────────────────────────────────────────
+# CONFIGURAÇÃO
+# ─────────────────────────────────────────
 st.set_page_config(
     page_title="🐼 PANDA SQL – Minicurso 2026",
     page_icon="🐼",
@@ -14,10 +17,15 @@ st.set_page_config(
 def criar_banco():
     conn = sqlite3.connect(":memory:")
 
-    conn.execute("""CREATE TABLE clientes (
-        id_cliente TEXT, id_unico_cliente TEXT,
-        cinco_digitos_cep_cliente TEXT, cidade_cliente TEXT, estado_cliente TEXT
-    )""")
+    conn.execute("""
+        CREATE TABLE clientes (
+            id_cliente TEXT,
+            id_unico_cliente TEXT,
+            cinco_digitos_cep_cliente TEXT,
+            cidade_cliente TEXT,
+            estado_cliente TEXT
+        )
+    """)
     conn.executemany("INSERT INTO clientes VALUES (?,?,?,?,?)", [
         ('c001','u001','01001','São Paulo','SP'),
         ('c002','u002','20001','Rio de Janeiro','RJ'),
@@ -36,12 +44,18 @@ def criar_banco():
         ('c015','u015','57001','Maceió','AL'),
     ])
 
-    conn.execute("""CREATE TABLE pedidos (
-        id_pedido TEXT, id_cliente TEXT, status_pedido TEXT,
-        data_hora_compra TEXT, pedido_aprovado TEXT,
-        data_entrega_transportadora TEXT, data_entrega_cliente TEXT,
-        data_estimada_entrega TEXT
-    )""")
+    conn.execute("""
+        CREATE TABLE pedidos (
+            id_pedido TEXT,
+            id_cliente TEXT,
+            status_pedido TEXT,
+            data_hora_compra TEXT,
+            pedido_aprovado TEXT,
+            data_entrega_transportadora TEXT,
+            data_entrega_cliente TEXT,
+            data_estimada_entrega TEXT
+        )
+    """)
     conn.executemany("INSERT INTO pedidos VALUES (?,?,?,?,?,?,?,?)", [
         ('p001','c001','delivered','2017-01-05 10:30:00','2017-01-05 11:00:00','2017-01-07','2017-10-10','2018-01-15'),
         ('p002','c002','delivered','2017-03-10 14:20:00','2017-03-10 15:00:00','2017-03-12','2017-11-20','2018-03-20'),
@@ -60,13 +74,19 @@ def criar_banco():
         ('p015','c015','shipped', '2018-03-25 16:00:00','2018-03-25 16:30:00','2018-03-27',None,'2018-04-10'),
     ])
 
-    conn.execute("""CREATE TABLE produtos (
-        id_produto TEXT, nome_categoria_produto TEXT,
-        comprimento_nome_produto INTEGER, comprimento_descricao_produto INTEGER,
-        quantidade_foto_produto INTEGER, peso_produto_g INTEGER,
-        comprimento_produto_cm INTEGER, altura_produto_cm INTEGER,
-        largura_produto_cm INTEGER
-    )""")
+    conn.execute("""
+        CREATE TABLE produtos (
+            id_produto TEXT,
+            nome_categoria_produto TEXT,
+            comprimento_nome_produto INTEGER,
+            comprimento_descricao_produto INTEGER,
+            quantidade_foto_produto INTEGER,
+            peso_produto_g INTEGER,
+            comprimento_produto_cm INTEGER,
+            altura_produto_cm INTEGER,
+            largura_produto_cm INTEGER
+        )
+    """)
     conn.executemany("INSERT INTO produtos VALUES (?,?,?,?,?,?,?,?,?)", [
         ('p001','cama_mesa_banho',18,120,3,500,30,10,20),
         ('p002','eletronicos',14,200,5,300,20,8,15),
@@ -90,13 +110,330 @@ def criar_banco():
         ('p020','eletronicos',15,280,7,250,19,7,14),
     ])
 
-    conn.execute("""CREATE TABLE geolocalizacao (
-        prefixo_codigo_postal TEXT, latitude_geolocalizacao REAL,
-        geolocalizacao_longitude REAL, cidade_geolocalizacao TEXT,
-        estado_geolocalizacao TEXT
-    )""")
+    conn.execute("""
+        CREATE TABLE geolocalizacao (
+            prefixo_codigo_postal TEXT,
+            latitude_geolocalizacao REAL,
+            geolocalizacao_longitude REAL,
+            cidade_geolocalizacao TEXT,
+            estado_geolocalizacao TEXT
+        )
+    """)
     conn.executemany("INSERT INTO geolocalizacao VALUES (?,?,?,?,?)", [
         ('01001',-23.5505,-46.6333,'sao paulo','SP'),
         ('20001',-22.9068,-43.1729,'rio de janeiro','RJ'),
         ('13001',-22.9056,-47.0608,'campinas','SP'),
+        ('30001',-19.9167,-43.9345,'belo horizonte','MG'),
+        ('11001',-23.9608,-46.3336,'santos','SP'),
+        ('80001',-25.4284,-49.2733,'curitiba','PR'),
+        ('40001',-12.9714,-38.5014,'salvador','BA'),
+        ('38401',-18.9186,-48.2772,'uberlandia','MG'),
+        ('60001',-3.7172,-38.5433,'fortaleza','CE'),
+        ('18001',-23.5015,-47.4526,'sorocaba','SP'),
+        ('89001',-26.3045,-48.8487,'joinville','SC'),
+        ('88001',-27.5954,-48.5480,'florianopolis','SC'),
+        ('29001',-20.3222,-40.3381,'vitoria','ES'),
+        ('49001',-10.9472,-37.0731,'aracaju','SE'),
+        ('57001',-9.6658,-35.7350,'maceio','AL'),
+        ('69001',-3.1190,-60.0217,'manaus','AM'),
+        ('66001',-1.4558,-48.5044,'belem','PA'),
+        ('74001',-16.6864,-49.2643,'goiania','GO'),
+        ('70001',-15.7797,-47.9297,'brasilia','DF'),
+        ('64001',-5.0920,-42.8038,'teresina','PI'),
+    ])
 
+    conn.commit()
+    return conn
+
+# ─────────────────────────────────────────
+# SESSÃO
+# ─────────────────────────────────────────
+if "conn" not in st.session_state:
+    st.session_state["conn"] = criar_banco()
+if "acertos" not in st.session_state:
+    st.session_state["acertos"] = set()
+
+conn = st.session_state["conn"]
+
+# ─────────────────────────────────────────
+# DESAFIOS
+# ─────────────────────────────────────────
+DESAFIOS = [
+    # ── SEMANA 1 ──────────────────────────
+    {
+        "id": 1,
+        "semana": "📘 Semana 1 — Introdução e SELECT",
+        "titulo": "Desafio 1 — Visualizar todos os clientes",
+        "enunciado": """
+Utilize o `SELECT` para visualizar **todas as colunas** da tabela `clientes`.
+
+> Tabelas disponíveis: `clientes`, `pedidos`, `produtos`, `geolocalizacao`
+""",
+        "gabarito": "SELECT * FROM clientes",
+        "dica": "Use `SELECT * FROM nome_da_tabela` — o `*` significa todas as colunas.",
+        "ordered": False,
+    },
+    {
+        "id": 2,
+        "semana": "📘 Semana 1 — Introdução e SELECT",
+        "titulo": "Desafio 2 — Selecionar colunas específicas",
+        "enunciado": """
+Selecione apenas as colunas `id_cliente` e `estado_cliente` da tabela `clientes`.
+""",
+        "gabarito": "SELECT id_cliente, estado_cliente FROM clientes",
+        "dica": "Liste as colunas separadas por vírgula: `SELECT col1, col2 FROM tabela`.",
+        "ordered": False,
+    },
+    # ── SEMANA 2 ──────────────────────────
+    {
+        "id": 3,
+        "semana": "📗 Semana 2 — Consultas Básicas e Filtragem",
+        "titulo": "Desafio 3 — Filtrar clientes por estado (WHERE)",
+        "enunciado": """
+Liste o `id_cliente` e o `estado_cliente` de todos os clientes do estado **'SC'**.
+""",
+        "gabarito": "SELECT id_cliente, estado_cliente FROM clientes WHERE estado_cliente = 'SC'",
+        "dica": "Use `WHERE estado_cliente = 'SC'` para filtrar apenas SC.",
+        "ordered": False,
+    },
+    {
+        "id": 4,
+        "semana": "📗 Semana 2 — Consultas Básicas e Filtragem",
+        "titulo": "Desafio 4 — Estados que começam com 'S' (LIKE)",
+        "enunciado": """
+Liste `id_cliente` e `estado_cliente` dos clientes cujo estado começa com a letra **'S'**.
+""",
+        "gabarito": "SELECT id_cliente, estado_cliente FROM clientes WHERE estado_cliente LIKE 'S%'",
+        "dica": "Use `LIKE 'S%'` — o `%` representa qualquer sequência de caracteres depois do S.",
+        "ordered": False,
+    },
+    {
+        "id": 5,
+        "semana": "📗 Semana 2 — Consultas Básicas e Filtragem",
+        "titulo": "Desafio 5 — Categorias específicas (IN)",
+        "enunciado": """
+Selecione `id_produto` e `nome_categoria_produto` de produtos cuja categoria seja
+**'perfumaria'** ou **'brinquedos'**.
+""",
+        "gabarito": "SELECT id_produto, nome_categoria_produto FROM produtos WHERE nome_categoria_produto IN ('perfumaria', 'brinquedos')",
+        "dica": "Use `IN ('valor1', 'valor2')` em vez de vários OR.",
+        "ordered": False,
+    },
+    {
+        "id": 6,
+        "semana": "📗 Semana 2 — Consultas Básicas e Filtragem",
+        "titulo": "Desafio 6 — Pedidos entre datas (BETWEEN)",
+        "enunciado": """
+Selecione `id_pedido` e `data_entrega_cliente` de pedidos entregues entre
+**'2017-10-04'** e **'2018-10-04'**, em ordem **crescente**.
+""",
+        "gabarito": "SELECT id_pedido, data_entrega_cliente FROM pedidos WHERE data_entrega_cliente BETWEEN '2017-10-04' AND '2018-10-04' ORDER BY data_entrega_cliente ASC",
+        "dica": "Use `BETWEEN '2017-10-04' AND '2018-10-04'` e depois `ORDER BY data_entrega_cliente ASC`.",
+        "ordered": True,
+    },
+    # ── SEMANA 3 ──────────────────────────
+    {
+        "id": 7,
+        "semana": "📙 Semana 3 — Ordenação, Limites e Nulos",
+        "titulo": "Desafio 7 — Ordenar por data de compra (ORDER BY ASC)",
+        "enunciado": """
+Selecione `data_hora_compra` da tabela `pedidos` em **ordem crescente**.
+""",
+        "gabarito": "SELECT data_hora_compra FROM pedidos ORDER BY data_hora_compra ASC",
+        "dica": "Use `ORDER BY data_hora_compra ASC` — do mais antigo ao mais recente.",
+        "ordered": True,
+    },
+    {
+        "id": 8,
+        "semana": "📙 Semana 3 — Ordenação, Limites e Nulos",
+        "titulo": "Desafio 8 — Top 10 registros (LIMIT)",
+        "enunciado": """
+Selecione `data_estimada_entrega` e `data_entrega_cliente` da tabela `pedidos`,
+ordenados por `data_estimada_entrega` de forma **crescente**, mostrando apenas **10 registros**.
+""",
+        "gabarito": "SELECT data_estimada_entrega, data_entrega_cliente FROM pedidos ORDER BY data_estimada_entrega ASC LIMIT 10",
+        "dica": "Combine `ORDER BY data_estimada_entrega ASC` com `LIMIT 10` no final.",
+        "ordered": True,
+    },
+    {
+        "id": 9,
+        "semana": "📙 Semana 3 — Ordenação, Limites e Nulos",
+        "titulo": "Desafio 9 — Pular registros (OFFSET)",
+        "enunciado": """
+Selecione **todos os campos** da tabela `pedidos`, ordenados por `status_pedido`,
+**pulando os 10 primeiros** e retornando os próximos **10**.
+""",
+        "gabarito": "SELECT * FROM pedidos ORDER BY status_pedido LIMIT 10 OFFSET 10",
+        "dica": "Use `LIMIT 10 OFFSET 10` — OFFSET define quantos registros pular antes de começar.",
+        "ordered": True,
+    },
+    {
+        "id": 10,
+        "semana": "📙 Semana 3 — Ordenação, Limites e Nulos",
+        "titulo": "Desafio 10 — Valores nulos (IS NULL)",
+        "enunciado": """
+Selecione **todos os registros** da tabela `clientes` onde `id_cliente`,
+`cidade_cliente` **ou** `estado_cliente` seja **nulo**.
+""",
+        "gabarito": "SELECT * FROM clientes WHERE id_cliente IS NULL OR cidade_cliente IS NULL OR estado_cliente IS NULL",
+        "dica": "Use `IS NULL` para verificar campos vazios. Combine com `OR` para checar várias colunas.",
+        "ordered": False,
+    },
+    {
+        "id": 11,
+        "semana": "📙 Semana 3 — Ordenação, Limites e Nulos",
+        "titulo": "Desafio 11 — Substituir nulos (COALESCE)",
+        "enunciado": """
+Selecione `id_pedido` e a coluna `data_entrega_cliente`, substituindo valores **nulos**
+pelo texto **'Não entregue'** usando `COALESCE`. Nomeie a coluna resultado como `entrega`.
+""",
+        "gabarito": "SELECT id_pedido, COALESCE(data_entrega_cliente, 'Não entregue') AS entrega FROM pedidos",
+        "dica": "Use `COALESCE(coluna, 'valor_substituto') AS nome` para substituir NULLs.",
+        "ordered": False,
+    },
+]
+
+# ─────────────────────────────────────────
+# COMPARAÇÃO
+# ─────────────────────────────────────────
+def comparar(df_u, df_g, ordered):
+    try:
+        df_u = df_u.copy()
+        df_g = df_g.copy()
+        df_u.columns = [c.lower().strip() for c in df_u.columns]
+        df_g.columns = [c.lower().strip() for c in df_g.columns]
+        if set(df_u.columns) != set(df_g.columns):
+            return False
+        df_u = df_u[df_g.columns]
+        if not ordered:
+            cols = list(df_g.columns)
+            df_u = df_u.sort_values(by=cols).reset_index(drop=True)
+            df_g = df_g.sort_values(by=cols).reset_index(drop=True)
+        else:
+            df_u = df_u.reset_index(drop=True)
+            df_g = df_g.reset_index(drop=True)
+        return df_u.astype(str).equals(df_g.astype(str))
+    except Exception:
+        return False
+
+# ─────────────────────────────────────────
+# SIDEBAR
+# ─────────────────────────────────────────
+with st.sidebar:
+    st.markdown("## 🐼 PANDA SQL")
+    st.caption("Minicurso 2026 · UFSCar")
+    st.divider()
+
+    total   = len(DESAFIOS)
+    acertos = len(st.session_state["acertos"])
+    pct     = int((acertos / total) * 100) if total > 0 else 0
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Acertos", acertos)
+    with col2:
+        st.metric("Total", total)
+
+    st.progress(acertos / total if total > 0 else 0, text=f"{pct}% concluído")
+
+    st.divider()
+    st.markdown("### 📚 Navegar por semana")
+    semana_filtro = st.radio(
+        "",
+        ["Todas as semanas", "Semana 1", "Semana 2", "Semana 3"],
+        label_visibility="collapsed"
+    )
+
+    st.divider()
+    st.markdown("### 📋 Tabelas disponíveis")
+    st.code("clientes\npedidos\nprodutos\ngeolocalizacao", language=None)
+
+    st.divider()
+    st.caption("Dataset: Brazilian E-Commerce Public Dataset by Olist")
+    st.caption("Grupo PANDA · UFSCar · 2026")
+
+# ─────────────────────────────────────────
+# CONTEÚDO PRINCIPAL
+# ─────────────────────────────────────────
+st.title("🐼 PANDA SQL — Minicurso 2026")
+st.markdown("""
+Bem-vindo à plataforma de desafios SQL do **PANDA UFSCar**!
+Escreva suas queries nos campos abaixo e clique em **Verificar** para checar a resposta.
+
+**Tabelas disponíveis:** `clientes` · `pedidos` · `produtos` · `geolocalizacao`
+""")
+st.divider()
+
+# filtro por semana
+if semana_filtro == "Todas as semanas":
+    desafios_visiveis = DESAFIOS
+else:
+    num = semana_filtro.split(" ")[1]
+    desafios_visiveis = [d for d in DESAFIOS if f"Semana {num}" in d["semana"]]
+
+# agrupar por semana
+semanas = {}
+for d in desafios_visiveis:
+    semanas.setdefault(d["semana"], []).append(d)
+
+for semana, desafios in semanas.items():
+    concluidos = sum(1 for d in desafios if d["id"] in st.session_state["acertos"])
+    st.subheader(f"{semana}  ·  {concluidos}/{len(desafios)} concluídos")
+
+    for desafio in desafios:
+        icon = "✅" if desafio["id"] in st.session_state["acertos"] else "📌"
+
+        with st.expander(f"{icon} {desafio['titulo']}", expanded=False):
+            st.markdown(desafio["enunciado"])
+
+            query = st.text_area(
+                "✏️ Escreva sua query SQL aqui:",
+                key=f"q_{desafio['id']}",
+                height=110,
+                placeholder="SELECT ..."
+            )
+
+            col1, col2 = st.columns([1, 1])
+
+            with col1:
+                if st.button("✔️ Verificar", key=f"v_{desafio['id']}"):
+                    q = query.strip()
+                    if not q:
+                        st.warning("⚠️ Escreva uma query antes de verificar.")
+                    else:
+                        try:
+                            df_u = pd.read_sql_query(q, conn)
+                            df_g = pd.read_sql_query(desafio["gabarito"], conn)
+                            if comparar(df_u, df_g, desafio["ordered"]):
+                                st.success("✅ Correto! Muito bem!")
+                                st.session_state["acertos"].add(desafio["id"])
+                                st.balloons()
+                            else:
+                                st.error("❌ Ainda não está certo. Revise sua query.")
+                            st.markdown("**Resultado da sua query:**")
+                            st.dataframe(df_u, use_container_width=True)
+                        except Exception as e:
+                            st.error(f"⚠️ Erro na query: {e}")
+
+            with col2:
+                if st.button("💡 Dica", key=f"d_{desafio['id']}"):
+                    st.info(f"💡 {desafio['dica']}")
+
+    st.divider()
+
+# ─────────────────────────────────────────
+# VISUALIZAÇÃO DAS TABELAS
+# ─────────────────────────────────────────
+st.subheader("📊 Explorar tabelas do banco")
+st.caption("Consulte os dados disponíveis para escrever suas queries:")
+
+tab1, tab2, tab3, tab4 = st.tabs(["clientes", "pedidos", "produtos", "geolocalizacao"])
+
+with tab1:
+    st.dataframe(pd.read_sql_query("SELECT * FROM clientes", conn), use_container_width=True)
+with tab2:
+    st.dataframe(pd.read_sql_query("SELECT * FROM pedidos", conn), use_container_width=True)
+with tab3:
+    st.dataframe(pd.read_sql_query("SELECT * FROM produtos", conn), use_container_width=True)
+with tab4:
+    st.dataframe(pd.read_sql_query("SELECT * FROM geolocalizacao", conn), use_container_width=True)
