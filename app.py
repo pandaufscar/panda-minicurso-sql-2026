@@ -3,13 +3,13 @@ import sqlite3
 import pandas as pd
 
 st.set_page_config(
-    page_title="🐼 Plataforma SQL – Grupo de Estudos",
+    page_title="🐼 Minicurso SQL – Plataforma Interativa",
     page_icon="🐼",
     layout="wide"
 )
 
 # =========================================================
-# BANCO DE DADOS EM MEMÓRIA
+# BANCO DE DADOS EM MEMÓRIA (MINIMAL)
 # =========================================================
 def criar_banco():
     conn = sqlite3.connect(":memory:")
@@ -27,7 +27,6 @@ def criar_banco():
         ("c002", "rio de janeiro", "RJ"),
         ("c003", "campinas", "SP"),
         ("c004", "curitiba", "PR"),
-        ("c005", "salvador", "BA"),
     ])
 
     conn.execute("""
@@ -35,19 +34,14 @@ def criar_banco():
             id_pedido TEXT,
             id_cliente TEXT,
             status_pedido TEXT,
-            data_hora_compra TEXT,
-            data_entrega_cliente TEXT,
-            data_estimada_entrega TEXT
+            data_hora_compra TEXT
         )
     """)
-    conn.executemany("INSERT INTO pedidos VALUES (?,?,?,?,?,?)", [
-        ("p001", "c001", "delivered",   "2017-01-05 10:30:00", "2018-01-15", "2018-01-10"),
-        ("p002", "c002", "delivered",   "2017-03-10 14:20:00", "2018-03-20", "2018-03-25"),
-        ("p003", "c003", "shipped",     "2018-06-15 09:00:00", None,         "2018-07-01"),
-        ("p004", "c004", "delivered",   "2018-09-20 16:45:00", "2018-10-05", "2018-09-30"),
-        ("p005", "c005", "canceled",    "2018-01-01 12:00:00", None,         "2018-01-15"),
-        ("p006", "c001", "unavailable", "2018-03-01 08:00:00", None,         "2018-03-10"),
-        ("p007", "c002", "shipped",     "2018-02-10 11:11:00", None,         "2018-02-15"),
+    conn.executemany("INSERT INTO pedidos VALUES (?,?,?,?)", [
+        ("p001", "c001", "delivered",  "2017-01-05 10:30:00"),
+        ("p002", "c002", "canceled",   "2017-03-10 14:20:00"),
+        ("p003", "c003", "shipped",    "2018-06-15 09:00:00"),
+        ("p004", "c004", "delivered",  "2018-09-20 16:45:00"),
     ])
 
     conn.execute("""
@@ -60,11 +54,9 @@ def criar_banco():
     """)
     conn.executemany("INSERT INTO produtos VALUES (?,?,?,?)", [
         ("pr001", "informatica_acessorios", 3, 150),
-        ("pr002", "informatica_acessorios", 4, 600),
-        ("pr003", "eletronicos",            5, 300),
-        ("pr004", "cama_mesa_banho",        2, 500),
-        ("pr005", "brinquedos",             4, 250),
-        ("pr006", "perfumaria",             2, 100),
+        ("pr002", "eletronicos",            5, 300),
+        ("pr003", "cama_mesa_banho",        2, 500),
+        ("pr004", "brinquedos",             4, 250),
     ])
 
     conn.execute("""
@@ -78,25 +70,21 @@ def criar_banco():
         ("rio de janeiro", "RJ"),
         ("campinas", "SP"),
         ("curitiba", "PR"),
-        ("salvador", "BA"),
     ])
 
-    # ---------- Tabelas Olist (Semana WHERE) ----------
+    # ---------- Tabelas Olist (para WHERE/LIKE/IN/BETWEEN/ORDER BY) ----------
     conn.execute("""
         CREATE TABLE olist_order_items_dataset (
             order_id TEXT,
             product_id TEXT,
-            seller_id TEXT,
             price REAL,
             freight_value REAL
         )
     """)
-    conn.executemany("INSERT INTO olist_order_items_dataset VALUES (?,?,?,?,?)", [
-        ("p001", "pr001", "s1", 120.0, 10.0),
-        ("p002", "pr002", "s2",  90.0,  0.0),
-        ("p003", "pr003", "s3", 200.0,  5.0),
-        ("p004", "pr004", "s4",  80.0,  0.0),
-        ("p005", "pr005", "s5", 150.0, 20.0),
+    conn.executemany("INSERT INTO olist_order_items_dataset VALUES (?,?,?,?)", [
+        ("p001", "pr001", 120.0, 10.0),
+        ("p002", "pr002",  90.0,  0.0),
+        ("p003", "pr003", 200.0, 20.0),
     ])
 
     conn.execute("""
@@ -110,9 +98,7 @@ def criar_banco():
     conn.executemany("INSERT INTO olist_order_payments_dataset VALUES (?,?,?,?)", [
         ("p001", "credit_card", 3, 120.0),
         ("p002", "boleto",      1, 200.0),
-        ("p003", "credit_card", 12, 80.0),
-        ("p004", "voucher",     1, 150.0),
-        ("p005", "debit_card", 10, 110.0),
+        ("p003", "voucher",     1,  80.0),
     ])
 
     conn.execute("""
@@ -124,40 +110,52 @@ def criar_banco():
     """)
     conn.executemany("INSERT INTO olist_order_reviews_dataset VALUES (?,?,?)", [
         ("p001", 5, "otimo"),
-        ("p002", 4, "bom"),
-        ("p003", 2, "atrasou"),
-        ("p004", 1, "ruim"),
-        ("p005", 3, "ok"),
+        ("p002", 4, "comentario bom"),
+        ("p003", 2, "nao foi bom"),
     ])
 
-    # Views para olist_customers_dataset / olist_orders_dataset / olist_products_dataset
     conn.execute("""
-        CREATE VIEW olist_customers_dataset AS
-        SELECT
-            id_cliente      AS customer_id,
-            cidade_cliente  AS customer_city,
-            estado_cliente  AS customer_state
-        FROM clientes
+        CREATE TABLE olist_customers_dataset (
+            customer_id TEXT,
+            customer_city TEXT,
+            customer_state TEXT
+        )
     """)
+    conn.executemany("INSERT INTO olist_customers_dataset VALUES (?,?,?)", [
+        ("c001", "sao paulo", "SP"),
+        ("c002", "rio de janeiro", "RJ"),
+        ("c003", "porto alegre", "RS"),
+    ])
+
     conn.execute("""
-        CREATE VIEW olist_orders_dataset AS
-        SELECT
-            id_pedido              AS order_id,
-            id_cliente             AS customer_id,
-            status_pedido          AS order_status,
-            data_hora_compra       AS order_purchase_timestamp,
-            data_entrega_cliente   AS order_delivered_customer_date,
-            data_estimada_entrega  AS order_estimated_delivery_date
-        FROM pedidos
+        CREATE TABLE olist_orders_dataset (
+            order_id TEXT,
+            customer_id TEXT,
+            order_status TEXT,
+            order_purchase_timestamp TEXT,
+            order_delivered_customer_date TEXT,
+            order_estimated_delivery_date TEXT
+        )
     """)
+    conn.executemany("INSERT INTO olist_orders_dataset VALUES (?,?,?,?,?,?)", [
+        ("p001", "c001", "delivered",   "2018-01-10", "2018-01-20", "2018-01-15"),
+        ("p002", "c002", "canceled",    "2017-12-05", None,         "2017-12-20"),
+        ("p003", "c003", "unavailable", "2018-02-01", None,         "2018-02-15"),
+        ("p004", "c001", "shipped",     "2018-03-10", None,         "2018-03-25"),
+    ])
+
     conn.execute("""
-        CREATE VIEW olist_products_dataset AS
-        SELECT
-            id_produto             AS product_id,
-            categoria_produto      AS product_category_name,
-            peso_produto_g         AS product_weight_g
-        FROM produtos
+        CREATE TABLE olist_products_dataset (
+            product_id TEXT,
+            product_category_name TEXT,
+            product_weight_g INTEGER
+        )
     """)
+    conn.executemany("INSERT INTO olist_products_dataset VALUES (?,?,?)", [
+        ("pr001", "moveis_escritorio", 1500),
+        ("pr002", "esporte_lazer",     1200),
+        ("pr003", "brinquedos",        800),
+    ])
 
     conn.commit()
     return conn
@@ -174,279 +172,158 @@ if "acertos" not in st.session_state:
 conn = st.session_state["conn"]
 
 # =========================================================
-# DESAFIOS (PDFs)
+# DESAFIOS SELECIONADOS (3 por bloco)
 # =========================================================
 DESAFIOS = [
-    # ----------------- SEMANA 1 – SELECT -----------------
+    # --------- BLOCO 1 – SELECT / FROM / AS (SEMANA 1) ---------
     {
-        "secao": "Semana 1 – SELECT",
-        "titulo": "Exercício 1 – SELECT * FROM clientes",
+        "secao": "Semana 1 – SELECT / FROM / AS",
+        "topico": "SELECT",
+        "titulo": "SELECT 1 – SELECT * FROM clientes",
         "enunciado": "Exiba todas as informações da tabela `clientes`.",
         "gabarito": "SELECT * FROM clientes",
         "explicacao": (
-            "O comando `SELECT *` retorna todas as colunas da tabela.\n"
-            "Aqui, todas as colunas e todas as linhas da tabela `clientes` serão exibidas."
+            "O comando `SELECT * FROM clientes` retorna **todas** as colunas e linhas da "
+            "tabela `clientes`. É útil para uma primeira exploração, mas em produção "
+            "costumamos selecionar só as colunas necessárias."
         ),
         "dica": "Copie exatamente: `SELECT * FROM clientes;`",
         "ordered": False,
     },
     {
-        "secao": "Semana 1 – SELECT",
-        "titulo": "Exercício 2 – id_cliente e cidade_cliente",
-        "enunciado": "Exiba o identificador do cliente e a cidade onde ele mora.",
-        "gabarito": "SELECT id_cliente, cidade_cliente FROM clientes",
-        "explicacao": (
-            "Em vez de usar `*`, você lista apenas as colunas desejadas após o `SELECT`.\n"
-            "A consulta retorna só `id_cliente` e `cidade_cliente`."
-        ),
-        "dica": "Use: `SELECT id_cliente, cidade_cliente FROM clientes;`",
-        "ordered": False,
-    },
-    {
-        "secao": "Semana 1 – SELECT",
-        "titulo": "Exercício 3 – dados de pedidos",
-        "enunciado": "Exiba `id_pedido`, `status_pedido` e `data_hora_compra`.",
-        "gabarito": "SELECT id_pedido, status_pedido, data_hora_compra FROM pedidos",
-        "explicacao": "Mesma ideia: escolha as colunas específicas da tabela `pedidos`.",
-        "dica": "Observe a ordem das colunas no PDF.",
-        "ordered": False,
-    },
-    {
-        "secao": "Semana 1 – SELECT",
-        "titulo": "Exercício 4 – dados de produtos",
-        "enunciado": "Liste `id_produto`, `categoria_produto` e `peso_produto_g`.",
-        "gabarito": "SELECT id_produto, categoria_produto, peso_produto_g FROM produtos",
-        "explicacao": "Você está selecionando três colunas da tabela `produtos`.",
-        "dica": "As colunas devem estar na mesma ordem do enunciado.",
-        "ordered": False,
-    },
-
-    # ----------------- SEMANA 1 – FROM -------------------
-    {
-        "secao": "Semana 1 – FROM",
-        "titulo": "Exercício 1 – SELECT * FROM geolocalizacao",
-        "enunciado": "Exiba todas as informações da tabela `geolocalizacao`.",
-        "gabarito": "SELECT * FROM geolocalizacao",
-        "explicacao": (
-            "`FROM` indica de qual tabela os dados vêm.\n"
-            "Aqui você está pegando todas as colunas da tabela `geolocalizacao`."
-        ),
-        "dica": "Use exatamente `FROM geolocalizacao`.",
-        "ordered": False,
-    },
-    {
-        "secao": "Semana 1 – FROM",
-        "titulo": "Exercício 2 – cidade e estado",
-        "enunciado": "Liste `cidade_geolocalizacao` e `estado_geolocalizacao`.",
+        "secao": "Semana 1 – SELECT / FROM / AS",
+        "topico": "FROM",
+        "titulo": "FROM 1 – cidade_geolocalizacao e estado_geolocalizacao",
+        "enunciado": "Liste `cidade_geolocalizacao` e `estado_geolocalizacao` da tabela `geolocalizacao`.",
         "gabarito": "SELECT cidade_geolocalizacao, estado_geolocalizacao FROM geolocalizacao",
-        "explicacao": "Você seleciona colunas específicas, mas a origem continua sendo `geolocalizacao`.",
-        "dica": "SELECT colunas … FROM geolocalizacao.",
+        "explicacao": (
+            "`FROM` indica **de qual tabela** os dados vêm.\n"
+            "Aqui você escolhe duas colunas específicas e informa que elas estão na tabela `geolocalizacao`."
+        ),
+        "dica": "Lembre: `SELECT colunas FROM nome_da_tabela`.",
         "ordered": False,
     },
     {
-        "secao": "Semana 1 – FROM",
-        "titulo": "Exercício 3 – clientes (FROM)",
-        "enunciado": "Exiba `id_cliente` e `cidade_cliente` usando a tabela `clientes`.",
-        "gabarito": "SELECT id_cliente, cidade_cliente FROM clientes",
-        "explicacao": "Reforço da ideia de FROM aplicando em outra tabela.",
-        "dica": "É muito parecido com o exercício 2 do SELECT.",
-        "ordered": False,
-    },
-    {
-        "secao": "Semana 1 – FROM",
-        "titulo": "Exercício 4 – pedidos (FROM)",
-        "enunciado": "Liste `id_pedido` e `status_pedido` da tabela `pedidos`.",
-        "gabarito": "SELECT id_pedido, status_pedido FROM pedidos",
-        "explicacao": "Novamente: selecione colunas e use `FROM pedidos`.",
-        "dica": "Não esqueça o `FROM pedidos`.",
-        "ordered": False,
-    },
-
-    # ----------------- SEMANA 1 – AS ---------------------
-    {
-        "secao": "Semana 1 – AS",
-        "titulo": "Exercício 1 – alias em clientes",
+        "secao": "Semana 1 – SELECT / FROM / AS",
+        "topico": "AS",
+        "titulo": "AS 1 – Alias em clientes",
         "enunciado": (
-            "Exiba `id_cliente` e `cidade_cliente`, renomeando para "
+            "Exiba `id_cliente` e `cidade_cliente`, renomeando as colunas para "
             "`\"Código do Cliente\"` e `\"Cidade\"`."
         ),
         "gabarito": 'SELECT id_cliente AS "Código do Cliente", cidade_cliente AS "Cidade" FROM clientes',
         "explicacao": (
-            "`AS` cria um apelido (alias) para a coluna apenas no resultado.\n"
-            "A coluna continua se chamando `id_cliente` na tabela, mas aparece como `Código do Cliente`."
+            "`AS` cria um apelido (alias) para deixar o resultado mais legível. "
+            "O nome da coluna na tabela continua `id_cliente`, mas no resultado aparece "
+            "como `Código do Cliente`."
         ),
-        "dica": "Use exatamente as aspas duplas ao redor dos nomes.",
-        "ordered": False,
-    },
-    {
-        "secao": "Semana 1 – AS",
-        "titulo": "Exercício 2 – alias em pedidos",
-        "enunciado": "Renomeie `id_pedido` para `\"Pedido\"` e `status_pedido` para `\"Status\"`.",
-        "gabarito": 'SELECT id_pedido AS "Pedido", status_pedido AS "Status" FROM pedidos',
-        "explicacao": "Mesma ideia de alias, agora na tabela `pedidos`.",
-        "dica": "Não esqueça o `AS` entre o nome original e o alias.",
-        "ordered": False,
-    },
-    {
-        "secao": "Semana 1 – AS",
-        "titulo": "Exercício 3 – alias em produtos",
-        "enunciado": (
-            "Exiba `categoria_produto` e `quantidade_fotos_produto`, renomeando para "
-            "`\"Categoria\"` e `\"Quantidade de Fotos\"`."
-        ),
-        "gabarito": 'SELECT categoria_produto AS "Categoria", quantidade_fotos_produto AS "Quantidade de Fotos" FROM produtos',
-        "explicacao": "Você está deixando o resultado mais legível sem mudar a tabela de verdade.",
-        "dica": "Os nomes entre aspas devem bater com o PDF.",
-        "ordered": False,
-    },
-    {
-        "secao": "Semana 1 – AS",
-        "titulo": "Exercício 4 – alias em geolocalizacao",
-        "enunciado": (
-            "Liste `cidade_geolocalizacao` e `estado_geolocalizacao`, renomeando para "
-            "`\"Cidade\"` e `\"UF\"`."
-        ),
-        "gabarito": 'SELECT cidade_geolocalizacao AS "Cidade", estado_geolocalizacao AS "UF" FROM geolocalizacao',
-        "explicacao": "Alias também pode ser aplicado a campos de outras tabelas, como `geolocalizacao`.",
-        "dica": "Aplica o mesmo padrão dos exercícios anteriores.",
+        "dica": "Use aspas duplas nos nomes: `\"Código do Cliente\"`.",
         "ordered": False,
     },
 
-    # ------------- WHERE / OPERADORES / AND/OR/NOT -------------
-    # Bloco 1 — WHERE
+    # --------- BLOCO 2 – WHERE / OPERADORES / AND OR NOT ---------
     {
-        "secao": "WHERE",
+        "secao": "WHERE / Operadores / Lógicos",
+        "topico": "WHERE",
         "titulo": "WHERE 1 – pedidos delivered",
-        "enunciado": "Liste todos os pedidos com status `'delivered'`.",
+        "enunciado": "Liste todos os pedidos com `order_status = 'delivered'`.",
         "gabarito": "SELECT * FROM olist_orders_dataset WHERE order_status = 'delivered'",
         "explicacao": (
-            "`WHERE` filtra linhas.\n"
-            "Aqui, só ficam as linhas onde `order_status = 'delivered'` é verdadeiro."
+            "`WHERE` filtra linhas com base em uma condição. "
+            "Somente pedidos cujo `order_status` é exatamente `'delivered'` serão retornados."
         ),
-        "dica": "Use exatamente `order_status = 'delivered'`.",
+        "dica": "Cuidado com aspas simples: `'delivered'`.",
         "ordered": False,
     },
     {
-        "secao": "WHERE",
-        "titulo": "WHERE 2 – pedidos canceled",
-        "enunciado": "Liste todos os pedidos com status `'canceled'`.",
-        "gabarito": "SELECT * FROM olist_orders_dataset WHERE order_status = 'canceled'",
-        "explicacao": "Mesmo filtro do anterior, mudando o valor do status.",
-        "dica": "Cuidado com aspas simples ao redor de `canceled`.",
-        "ordered": False,
-    },
-    {
-        "secao": "WHERE",
-        "titulo": "WHERE 3 – clientes de sao paulo",
-        "enunciado": "Liste `customer_id`, `customer_city`, `customer_state` de quem mora em `'sao paulo'`.",
-        "gabarito": "SELECT customer_id, customer_city, customer_state FROM olist_customers_dataset WHERE customer_city = 'sao paulo'",
-        "explicacao": (
-            "Os dados de cidade no Olist estão em minúsculas e sem acento.\n"
-            "Por isso usamos `'sao paulo'`."
-        ),
-        "dica": "Não use `São Paulo` com acento.",
-        "ordered": False,
-    },
-    {
-        "secao": "WHERE",
-        "titulo": "WHERE 4 – produtos informatica_acessorios",
-        "enunciado": "Liste `product_id` e `product_category_name` de produtos `informatica_acessorios`.",
-        "gabarito": "SELECT product_id, product_category_name FROM olist_products_dataset WHERE product_category_name = 'informatica_acessorios'",
-        "explicacao": "Segue exatamente o exemplo do PDF.",
-        "dica": "A categoria é `informatica_acessorios` (sem acento).",
-        "ordered": False,
-    },
-
-    # Bloco 2 — Operadores de comparação
-    {
-        "secao": "Operadores",
-        "titulo": "Operador 1 – price > 100",
-        "enunciado": "Liste itens de pedido com `price` maior que 100.",
+        "secao": "WHERE / Operadores / Lógicos",
+        "topico": "Operadores de comparação",
+        "titulo": "OP 1 – Itens com price > 100",
+        "enunciado": "Liste itens de pedido (`olist_order_items_dataset`) cujo `price` seja maior que 100.",
         "gabarito": "SELECT * FROM olist_order_items_dataset WHERE price > 100",
         "explicacao": (
-            "O operador `>` compara valores numéricos.\n"
-            "Só aparecem linhas com `price` maior que 100."
+            "O operador `>` compara valores numéricos. "
+            "Aqui, só aparecem linhas em que `price` é estritamente maior que 100."
         ),
-        "dica": "Não use `>=`, é só `>`.",
+        "dica": "Não use `>=`, é apenas `>`.",
         "ordered": False,
     },
     {
-        "secao": "Operadores",
-        "titulo": "Operador 2 – parcelas >= 10",
-        "enunciado": "Liste pagamentos com `payment_installments >= 10`.",
-        "gabarito": "SELECT * FROM olist_order_payments_dataset WHERE payment_installments >= 10",
-        "explicacao": "`>=` significa maior ou igual.",
-        "dica": "Compare exatamente com 10.",
-        "ordered": False,
-    },
-    {
-        "secao": "Operadores",
-        "titulo": "Operador 3 – review_score < 3",
-        "enunciado": "Liste avaliações com `review_score` menor que 3.",
-        "gabarito": "SELECT * FROM olist_order_reviews_dataset WHERE review_score < 3",
-        "explicacao": "`<` retorna apenas notas menores que 3 (1 e 2).",
-        "dica": "Esse filtro ignora notas 3, 4 e 5.",
-        "ordered": False,
-    },
-    {
-        "secao": "Operadores",
-        "titulo": "Operador 4 – freight_value <> 0",
-        "enunciado": "Liste itens em que `freight_value` é diferente de 0 (houve frete).",
-        "gabarito": "SELECT * FROM olist_order_items_dataset WHERE freight_value <> 0",
-        "explicacao": "`<>` é o operador 'diferente de'.",
-        "dica": "Equivalente a `!=` em algumas linguagens.",
+        "secao": "WHERE / Operadores / Lógicos",
+        "topico": "AND / OR / NOT",
+        "titulo": "LOG 1 – delivered atrasados",
+        "enunciado": (
+            "Liste pedidos com status `'delivered'` e que foram entregues **depois** "
+            "da data estimada (`order_delivered_customer_date > order_estimated_delivery_date`)."
+        ),
+        "gabarito": (
+            "SELECT * FROM olist_orders_dataset\n"
+            "WHERE order_status = 'delivered'\n"
+            "  AND order_delivered_customer_date > order_estimated_delivery_date"
+        ),
+        "explicacao": (
+            "`AND` exige que **as duas condições** sejam verdadeiras ao mesmo tempo:\n"
+            "- status igual a 'delivered'\n"
+            "- data de entrega maior que a data estimada\n"
+            "Isso identifica pedidos atrasados."
+        ),
+        "dica": "Use `AND` entre as duas condições.",
         "ordered": False,
     },
 
-    # Bloco 3 — AND / OR / NOT
+    # --------- BLOCO 3 – LIKE / IN / BETWEEN / ORDER BY ---------
     {
-        "secao": "AND / OR / NOT",
-        "titulo": "Lógico 1 – delivered atrasados (AND)",
-        "enunciado": (
-            "Liste pedidos com status `'delivered'` e que foram entregues **depois** "
-            "da data estimada de entrega."
-        ),
-        "gabarito": "SELECT * FROM olist_orders_dataset WHERE order_status = 'delivered' AND order_delivered_customer_date > order_estimated_delivery_date",
+        "secao": "LIKE / IN / BETWEEN / ORDER BY",
+        "topico": "LIKE",
+        "titulo": "LIKE 1 – cidade termina com 'paulo'",
+        "enunciado": "Liste clientes (`olist_customers_dataset`) cuja cidade termina com `'paulo'`.",
+        "gabarito": "SELECT * FROM olist_customers_dataset WHERE customer_city LIKE '%paulo'",
         "explicacao": (
-            "`AND` exige que as duas condições sejam verdadeiras ao mesmo tempo:\n"
-            "- status delivered\n"
-            "- data de entrega maior que a data estimada."
+            "`LIKE` permite buscar padrões em textos. "
+            "O `%` antes significa 'qualquer coisa antes', então `%paulo` pega cidades que "
+            "terminam em `'paulo'` (ex.: `sao paulo`)."
         ),
-        "dica": "Use exatamente a comparação `>` entre as datas.",
+        "dica": "Coloque `%` **antes**: `LIKE '%paulo'`.",
         "ordered": False,
     },
     {
-        "secao": "AND / OR / NOT",
-        "titulo": "Lógico 2 – canceled OU unavailable (OR)",
-        "enunciado": "Liste pedidos com status `'canceled'` ou `'unavailable'`.",
-        "gabarito": "SELECT * FROM olist_orders_dataset WHERE order_status = 'canceled' OR order_status = 'unavailable'",
-        "explicacao": "`OR` retorna linhas que atendem a pelo menos uma das condições.",
-        "dica": "Não esqueça de repetir `order_status` nas duas comparações.",
-        "ordered": False,
-    },
-    {
-        "secao": "AND / OR / NOT",
-        "titulo": "Lógico 3 – pagamentos NÃO credit_card (NOT)",
-        "enunciado": "Liste pagamentos cujo `payment_type` não seja `'credit_card'`.",
-        "gabarito": "SELECT * FROM olist_order_payments_dataset WHERE NOT payment_type = 'credit_card'",
-        "explicacao": "`NOT` inverte a condição: traz tudo que NÃO é cartão de crédito.",
-        "dica": "Também poderia usar `payment_type <> 'credit_card'`.",
-        "ordered": False,
-    },
-    {
-        "secao": "AND / OR / NOT",
-        "titulo": "Lógico 4 – delivered/shipped desde 2018",
+        "secao": "LIKE / IN / BETWEEN / ORDER BY",
+        "topico": "IN",
+        "titulo": "IN 1 – estados SP, RJ ou MG",
         "enunciado": (
-            "Liste pedidos com status `'delivered'` ou `'shipped'`, "
-            "e que tenham sido comprados a partir de `2018-01-01`."
+            "Liste clientes (`olist_customers_dataset`) que moram nos estados "
+            "`'SP'`, `'RJ'` ou `'MG'`."
         ),
-        "gabarito": "SELECT * FROM olist_orders_dataset WHERE (order_status = 'delivered' OR order_status = 'shipped') AND order_purchase_timestamp >= '2018-01-01'",
+        "gabarito": (
+            "SELECT * FROM olist_customers_dataset\n"
+            "WHERE customer_state IN ('SP', 'RJ', 'MG')"
+        ),
         "explicacao": (
-            "Os parênteses garantem que o `OR` seja avaliado antes do `AND`.\n"
-            "Primeiro escolhemos delivered/shipped, depois filtramos pela data."
+            "`IN` é um atalho para vários `OR`. "
+            "Em vez de escrever `state = 'SP' OR state = 'RJ' OR state = 'MG'`, "
+            "usamos `IN ('SP','RJ','MG')`."
         ),
-        "dica": "Não esqueça dos parênteses ao redor do `OR`.",
+        "dica": "Lembre de colocar os valores entre parênteses e separados por vírgula.",
         "ordered": False,
+    },
+    {
+        "secao": "LIKE / IN / BETWEEN / ORDER BY",
+        "topico": "ORDER BY",
+        "titulo": "ORDER BY 1 – ordenar produtos por peso (DESC)",
+        "enunciado": (
+            "Liste todos os produtos (`olist_products_dataset`), "
+            "ordenando do mais pesado para o mais leve (`product_weight_g DESC`)."
+        ),
+        "gabarito": (
+            "SELECT * FROM olist_products_dataset\n"
+            "ORDER BY product_weight_g DESC"
+        ),
+        "explicacao": (
+            "`ORDER BY` organiza o resultado. `DESC` significa ordem decrescente "
+            "(maior para menor). Se você usar `ASC` ou nada, será crescente."
+        ),
+        "dica": "Coloque `ORDER BY product_weight_g DESC` no final da query.",
+        "ordered": True,
     },
 ]
 
@@ -481,8 +358,8 @@ def comparar(df_u, df_g, ordered):
 # SIDEBAR
 # =========================================================
 with st.sidebar:
-    st.markdown("## 🐼 Grupo de Estudos SQL")
-    st.caption("Plataforma baseada nos exercícios dos PDFs")
+    st.markdown("## 🐼 Minicurso SQL")
+    st.caption("Plataforma didática com poucos exercícios chaves")
 
     total = len(DESAFIOS)
     acertos = len(st.session_state["acertos"])
@@ -492,12 +369,12 @@ with st.sidebar:
 
     st.divider()
     secao_filtro = st.selectbox(
-        "Filtrar por bloco",
+        "Bloco / Semana",
         ["Todos"] + sorted({d["secao"] for d in DESAFIOS})
     )
 
     st.divider()
-    st.markdown("### Tabelas principais")
+    st.markdown("### Tabelas usadas")
     st.code(
         "clientes\npedidos\nprodutos\ngeolocalizacao\n"
         "olist_orders_dataset\nolist_customers_dataset\n"
@@ -510,17 +387,20 @@ with st.sidebar:
 # CONTEÚDO PRINCIPAL
 # =========================================================
 st.title("Plataforma Interativa de Exercícios SQL")
+
 st.markdown("""
-Todos os exercícios e respostas foram retirados dos PDFs do grupo:
+Esta plataforma traz uma **seleção pequena e didática** dos exercícios:
 
-- **Semana 1** – SELECT, FROM, AS  
-- **WHERE / Operadores / AND / OR / NOT**  
+- **Semana 1**: SELECT, FROM, AS  
+- **Bloco 2**: WHERE, operadores de comparação e lógicos  
+- **Bloco 3**: LIKE, IN, BETWEEN, ORDER BY (aqui usamos 3 principais)  
 
-Para cada exercício:
-1. Leia o enunciado  
-2. Escreva sua query  
-3. Clique em **Verificar**  
-4. Use **Dica** ou veja a **Resposta correta** se precisar
+Cada exercício tem:
+- enunciado
+- explicação
+- dica
+- verificação automática
+- botão para ver a resposta correta
 """)
 st.divider()
 
@@ -533,10 +413,10 @@ for desafio in desafios_visiveis:
     concluido = desafio["titulo"] in st.session_state["acertos"]
     icon = "✅" if concluido else "📌"
 
-    with st.expander(f"{icon} {desafio['titulo']} — {desafio['secao']}", expanded=False):
+    with st.expander(f"{icon} {desafio['titulo']} — {desafio['topico']}", expanded=False):
         st.markdown(f"**Enunciado:**\n\n{desafio['enunciado']}")
 
-        st.markdown("**Explicação (do PDF):**")
+        st.markdown("**Explicação:**")
         st.info(desafio["explicacao"])
 
         query = st.text_area(
@@ -564,6 +444,7 @@ for desafio in desafios_visiveis:
                             st.balloons()
                         else:
                             st.error("Ainda não está igual à resposta esperada.")
+
                         st.markdown("**Resultado da sua query:**")
                         st.dataframe(df_u, use_container_width=True)
                     except Exception as e:
@@ -585,14 +466,9 @@ st.divider()
 st.subheader("Ver dados das tabelas")
 
 tabs = st.tabs([
-    "clientes",
-    "pedidos",
-    "produtos",
-    "geolocalizacao",
-    "olist_orders",
-    "olist_customers",
-    "itens / pagamentos / reviews",
-    "olist_products"
+    "clientes", "pedidos", "produtos", "geolocalizacao",
+    "olist_orders", "olist_customers",
+    "itens / pagamentos / reviews", "olist_products"
 ])
 
 with tabs[0]:
